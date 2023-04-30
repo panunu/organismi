@@ -8,7 +8,6 @@ const rules = {
     energy: 1000,
     fertility: 10,
   },
-
   birthEnergyCost: 10,
   lifecycleInMs: 100,
   energySharingRatio: 2,
@@ -90,7 +89,6 @@ class Organism {
     if (this.energy <= rules.energyLevelOfDeath && !this.genesis) {
       this.children.forEach((child) => (child.parent = null))
       delete matrix[positionIndexInMatrix(this.x, this.y)]
-
       return
     }
 

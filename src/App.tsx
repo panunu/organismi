@@ -56,7 +56,7 @@ const Pixel: FC<any> = ({ x, y, opacity, color }) => {
         width: `${zoomRatio}px`,
         height: `${zoomRatio}px`,
         backgroundColor: color,
-        opacity: `${opacity + 2}%`,
+        opacity: `${opacity + 5}%`,
       }}
     ></div>
   )

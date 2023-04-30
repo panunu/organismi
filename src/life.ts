@@ -9,6 +9,8 @@ import {
   shiftNegative,
 } from './utils'
 
+const { round, floor, random, abs, max } = Math
+
 const rules = {
   genesis: {
     x: 0,
@@ -18,7 +20,7 @@ const rules = {
     energySharingRatio: 4,
   },
   birthOdds: 1 / 10,
-  genesisOdds: 1 / 100000,
+  genesisOdds: 1 / 1000,
   energySurgeOdds: 1 / 10,
   birthEnergyCost: 10,
   lifecycleInMs: 50,
@@ -56,7 +58,7 @@ class Organism {
   ) {
     const evolution = shiftNegative(rules.evolutionaryStep)
 
-    this.id = Math.random()
+    this.id = random()
     this.genesis = parent === null
     this.parent = parent
     this.children = []
@@ -97,8 +99,7 @@ class Organism {
     const existing = matrix[positionIndex]
     if (
       existing &&
-      !existing.genesis &&
-      Math.abs(existing.ancestry - this.ancestry) <
+      abs(existing.ancestry - this.ancestry) <
         rules.cannibalismThresholdOnAncestors
     ) {
       this.memory.x = undefined
@@ -121,7 +122,7 @@ class Organism {
     const share = (to, energy) => {
       if (!to || !energy) return
 
-      const sharedEnergy = Math.round(energy / (to.parent ? 2 : 1))
+      const sharedEnergy = round(energy / (to.parent ? 2 : 1))
       to.energy += sharedEnergy
       share(to.parent, sharedEnergy)
     }
@@ -131,10 +132,10 @@ class Organism {
   }
 
   share() {
-    const energyToShare = Math.round(
+    const energyToShare = round(
       this.energy / this.children.length / this.energySharingRatio
     )
-    this.energy -= Math.floor(energyToShare * this.children.length)
+    this.energy -= floor(energyToShare * this.children.length)
     this.children.forEach((children) => (children.energy += energyToShare))
   }
 
@@ -172,18 +173,19 @@ class Organism {
     }
 
     if (this.genesis && odds(rules.energySurgeOdds)) {
-      this.energy += Math.round(Math.random() * rules.maxEnergySurge)
+      this.energy += round(random() * rules.maxEnergySurge)
     }
 
     this.timeout = setTimeout(
       () => this.lifecycle(),
-      Math.max(rules.lifecycleInMs - this.energy, 10)
+      max(rules.lifecycleInMs - this.energy, 10)
     )
   }
 }
 
 const bigBang = (x, y) => {
   const genesis = new Organism(null, x, y)
+  matrix[positionIndexInMatrix(x, y)] = genesis
 
   console.log('big bang', genesis.id, genesis.x, genesis.y)
 }

@@ -12,7 +12,7 @@ const rules = {
   birthEnergyCost: 10,
   lifecycleInMs: 100,
   energySharingRatio: 2,
-  energyCost: 2,
+  energyCost: 1,
   maxEnergySurge: 20000,
   energyLevelOfDeath: -10,
   birthOdds: 1 / 10,
@@ -59,7 +59,7 @@ class Organism {
     if (!matrix[positionIndex]) {
       const baby = new Organism(this, x, y)
       this.children.push(baby)
-      this.fertility--
+      this.fertility = 0
 
       matrix[positionIndex] = baby
     }
@@ -72,7 +72,7 @@ class Organism {
     if (
       this.fertility > 0 &&
       this.energy >= rules.birthEnergyCost &&
-      Math.random() <= rules.birthOdds
+      Math.random() - this.fertility / 100 <= rules.birthOdds
     ) {
       this.multiply()
     }

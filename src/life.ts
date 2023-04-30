@@ -5,7 +5,7 @@ const rules = {
   genesis: {
     x: 0,
     y: 0,
-    energy: 1000,
+    energy: 10000,
     fertility: 10,
     energySharingRatio: 4,
   },
@@ -18,7 +18,7 @@ const rules = {
   birthOdds: 1 / 10,
   colorRotationFactor: 20,
   evolutionaryStep: 1,
-  cannibalismThresholdOnAncestors: 100,
+  cannibalismThresholdOnAncestors: 2,
 }
 
 const matrix = {}

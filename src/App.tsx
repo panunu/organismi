@@ -2,7 +2,7 @@ import './App.css'
 import { matrix, bigBang, rules } from './life'
 import { FC, useEffect, useState } from 'react'
 
-const zoomRatio = 15
+const zoomRatio = 10
 
 const start = (e) => {
   Object.values(matrix)?.length === 0 && bigBang(0, 0)

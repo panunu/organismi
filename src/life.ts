@@ -1,25 +1,33 @@
 import Color from 'color'
 import randomColor from 'randomcolor'
 
-import { either, norp, positionIndexInMatrix, shiftNegative } from './utils'
+import {
+  either,
+  norp,
+  odds,
+  positionIndexInMatrix,
+  shiftNegative,
+} from './utils'
 
 const rules = {
   genesis: {
     x: 0,
     y: 0,
-    energy: 10000,
+    energy: 1000,
     fertility: 10,
     energySharingRatio: 4,
   },
+  birthOdds: 1 / 10,
+  genesisOdds: 1 / 100000,
+  energySurgeOdds: 1 / 10,
   birthEnergyCost: 10,
   lifecycleInMs: 50,
   energyCost: 0.5,
-  maxEnergySurge: 2000000,
-  energySurgeOdds: 1 / 10,
+  maxEnergySurge: 2000,
   energyLevelOfDeath: -10,
-  birthOdds: 1 / 10,
   colorRotationFactor: 20,
   evolutionaryStep: 2,
+  leapDistance: 1,
   cannibalismThresholdOnAncestors: 5,
 }
 
@@ -52,11 +60,11 @@ class Organism {
     this.genesis = parent === null
     this.parent = parent
     this.children = []
-    this.ancestry = (parent?.ancestry ?? evolution) + evolution
+    this.ancestry = (parent?.ancestry ?? evolution * 1000) + evolution
     this.x = x
     this.y = y
     this.memory = memory
-    this.color = Color(parent?.color || randomColor({ luminosity: 'dark' }))
+    this.color = Color(parent?.color || randomColor({ luminosity: 'random' }))
       .rotate(evolution * rules.colorRotationFactor)
       .hex()
 
@@ -75,9 +83,11 @@ class Organism {
   }
 
   multiply() {
+    const distance = () => norp(rules.leapDistance)
+
     this.memory = {
-      x: either(this.memory?.x ?? norp(1), norp(1)),
-      y: either(this.memory?.y ?? norp(1), norp(1)),
+      x: either(this.memory?.x ?? distance(), distance()),
+      y: either(this.memory?.y ?? distance(), distance()),
     }
 
     const x = this.memory.x + this.x
@@ -96,7 +106,12 @@ class Organism {
       return
     }
 
-    const offspring = new Organism(this, x, y, this.memory)
+    const offspring = new Organism(
+      odds(rules.genesisOdds) ? null : this,
+      x,
+      y,
+      this.memory
+    )
     existing && offspring.eat(existing)
 
     matrix[positionIndex] = offspring
@@ -143,7 +158,7 @@ class Organism {
     if (
       this.fertility > 0 &&
       this.energy >= rules.birthEnergyCost &&
-      Math.random() - this.fertility / 100 <= rules.birthOdds
+      odds(rules.birthOdds + this.fertility / 100)
     ) {
       this.multiply()
     }
@@ -156,7 +171,7 @@ class Organism {
       return this.die()
     }
 
-    if (this.genesis && Math.random() <= rules.energySurgeOdds) {
+    if (this.genesis && odds(rules.energySurgeOdds)) {
       this.energy += Math.round(Math.random() * rules.maxEnergySurge)
     }
 

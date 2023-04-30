@@ -1,6 +1,8 @@
 import Color from 'color'
 import randomColor from 'randomcolor'
 
+import { either, norp, positionIndexInMatrix, shiftNegative } from './utils'
+
 const rules = {
   genesis: {
     x: 0,
@@ -11,7 +13,7 @@ const rules = {
   },
   birthEnergyCost: 10,
   lifecycleInMs: 50,
-  energyCost: 1,
+  energyCost: 0.5,
   maxEnergySurge: 2000000,
   energySurgeOdds: 1 / 10,
   energyLevelOfDeath: -10,
@@ -22,7 +24,6 @@ const rules = {
 }
 
 const matrix = {}
-const positionIndexInMatrix = (x, y) => `${x},${y}`
 
 class Organism {
   id: number
@@ -45,8 +46,7 @@ class Organism {
     y: number,
     defaultMove: { x: number; y: number } = null
   ) {
-    const evolution =
-      -rules.evolutionaryStep / 2 + Math.random() * rules.evolutionaryStep
+    const evolution = shiftNegative(rules.evolutionaryStep)
 
     this.id = Math.random()
     this.genesis = parent === null
@@ -77,14 +77,8 @@ class Organism {
 
   multiply() {
     this.defaultMove = {
-      x:
-        Math.random() >= 0.5
-          ? this.defaultMove?.x ?? Math.round(Math.random() * 2) - 1
-          : Math.round(Math.random() * 2) - 1,
-      y:
-        Math.random() >= 0.5
-          ? this.defaultMove?.y ?? Math.round(Math.random() * 2) - 1
-          : Math.round(Math.random() * 2) - 1,
+      x: either(this.defaultMove?.x ?? norp(1), norp(1)),
+      y: either(this.defaultMove?.y ?? norp(1), norp(1)),
     }
 
     const x = this.defaultMove.x + this.x
@@ -110,14 +104,11 @@ class Organism {
 
   eat(organism: Organism) {
     const share = (to, energy) => {
-      if (to) {
-        const sharedEnergy = Math.floor(energy / 2)
+      if (!to || !energy) return
 
-        to.energy += sharedEnergy
-        if (to.parent) {
-          share(to.parent, sharedEnergy)
-        }
-      }
+      const sharedEnergy = Math.round(energy / (to.parent ? 2 : 1))
+      to.energy += sharedEnergy
+      share(to.parent, sharedEnergy)
     }
 
     organism.die()
@@ -136,7 +127,6 @@ class Organism {
     this.timeout && clearTimeout(this.timeout)
 
     if (this.parent) {
-      this.parent.energy += this.fertility
       this.parent.children = this.parent.children?.filter(
         (children) => children.id !== this.id
       )

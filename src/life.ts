@@ -7,13 +7,15 @@ const rules = {
     y: 0,
     energy: 1000,
     fertility: 10,
-    maxEnergySurge: 20000,
   },
-  lifecycleInMs: 100,
+
   birthEnergyCost: 10,
+  lifecycleInMs: 100,
   energySharingRatio: 2,
   energyCost: 2,
+  maxEnergySurge: 20000,
   energyLevelOfDeath: -10,
+  birthOdds: 1 / 10,
 }
 
 const matrix = {}
@@ -49,7 +51,7 @@ class Organism {
     setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
   }
 
-  birth() {
+  multiply() {
     const x = Math.round(Math.random() * 2) - 1 + this.x
     const y = Math.round(Math.random() * 2) - 1 + this.y
 
@@ -64,17 +66,15 @@ class Organism {
   }
 
   lifecycle() {
-    if (Math.floor(Math.random() * 4) === 0) {
-      this.energy -= rules.energyCost
-      this.fertility += Math.round(this.energy / 10)
-    }
+    this.energy -= rules.energyCost
+    this.fertility += this.energy > 0 ? 1 : 0
 
     if (
       this.fertility > 0 &&
       this.energy >= rules.birthEnergyCost &&
-      Math.floor(Math.random() * 4) === 0
+      Math.random() <= rules.birthOdds
     ) {
-      this.birth()
+      this.multiply()
     }
 
     if (this.parent?.energy >= rules.energySharingRatio * 2) {
@@ -95,7 +95,7 @@ class Organism {
     }
 
     if (this.genesis && Math.random() >= 0.9) {
-      this.energy += Math.round(Math.random() * rules.genesis.maxEnergySurge)
+      this.energy += Math.round(Math.random() * rules.maxEnergySurge)
     }
 
     setTimeout(() => this.lifecycle(), rules.lifecycleInMs)

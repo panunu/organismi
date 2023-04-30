@@ -23,7 +23,7 @@ const rules = {
   genesisOdds: 1 / 1000,
   energySurgeOdds: 1 / 10,
   birthEnergyCost: 10,
-  lifecycleInMs: 20,
+  lifecycleInMs: 40,
   lifecycleEnergyCost: 0.5,
   maxEnergySurge: 2000,
   energyLevelOfDeath: -10,

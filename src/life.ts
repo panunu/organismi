@@ -38,13 +38,13 @@ class Organism {
   energySharingRatio: number
   color: any
   timeout: any
-  defaultMove: null | { x: number; y: number }
+  memory: object | any
 
   constructor(
     parent: Organism | null = null,
     x: number,
     y: number,
-    defaultMove: { x: number; y: number } = null
+    memory: object = {}
   ) {
     const evolution = shiftNegative(rules.evolutionaryStep)
 
@@ -55,6 +55,7 @@ class Organism {
     this.ancestry = (parent?.ancestry ?? evolution) + evolution
     this.x = x
     this.y = y
+    this.memory = memory
     this.color = Color(parent?.color || randomColor({ luminosity: 'dark' }))
       .rotate(evolution * rules.colorRotationFactor)
       .hex()
@@ -70,19 +71,17 @@ class Organism {
       parent.fertility = 0
     }
 
-    this.defaultMove = defaultMove
-
     this.timeout = setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
   }
 
   multiply() {
-    this.defaultMove = {
-      x: either(this.defaultMove?.x ?? norp(1), norp(1)),
-      y: either(this.defaultMove?.y ?? norp(1), norp(1)),
+    this.memory = {
+      x: either(this.memory?.x ?? norp(1), norp(1)),
+      y: either(this.memory?.y ?? norp(1), norp(1)),
     }
 
-    const x = this.defaultMove.x + this.x
-    const y = this.defaultMove.y + this.y
+    const x = this.memory.x + this.x
+    const y = this.memory.y + this.y
 
     const positionIndex = positionIndexInMatrix(x, y)
     const existing = matrix[positionIndex]
@@ -92,14 +91,15 @@ class Organism {
       Math.abs(existing.ancestry - this.ancestry) <
         rules.cannibalismThresholdOnAncestors
     ) {
-      this.defaultMove = null
+      this.memory.x = undefined
+      this.memory.y = undefined
       return
     }
 
-    const baby = new Organism(this, x, y, this.defaultMove)
-    existing && baby.eat(existing)
+    const offspring = new Organism(this, x, y, this.memory)
+    existing && offspring.eat(existing)
 
-    matrix[positionIndex] = baby
+    matrix[positionIndex] = offspring
   }
 
   eat(organism: Organism) {

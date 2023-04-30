@@ -5,14 +5,14 @@ const rules = {
   genesis: {
     x: 0,
     y: 0,
-    energy: 10000,
+    energy: 1000,
     fertility: 10,
-    maxEnergySurge: 20000,
+    maxEnergySurge: 2000,
   },
   lifecycleInMs: 100,
   birthEnergyCost: 10,
   energySharingRatio: 2,
-  energyCost: 1,
+  energyCost: 2,
 }
 
 const matrix = {}
@@ -63,8 +63,6 @@ class Organism {
   }
 
   lifecycle() {
-    console.log(this.id)
-
     if (Math.floor(Math.random() * 4) === 0) {
       this.energy -= rules.energyCost
       this.fertility += 1
@@ -88,21 +86,14 @@ class Organism {
       this.parent.energy -= energyToShare
     }
 
-    if (Math.random() >= 1) {
-      this.energy += Math.floor(Math.random() * rules.birthEnergyCost)
-      // this.fertility += 1
-    }
-
-    if (this.genesis && Math.random() >= 0.9) {
-      this.energy += Math.round(Math.random() * rules.genesis.maxEnergySurge)
-    }
-
     if (this.energy <= 0 && !this.genesis) {
-      console.log('deleting', this.x, this.y)
-
       this.children.forEach((child) => (child.parent = null))
       matrix[`${this.x}.${this.y}`] = null
       delete matrix[`${this.x}.${this.y}`]
+    }
+
+    if (this.genesis && Math.random() >= 0.95) {
+      this.energy += Math.round(Math.random() * rules.genesis.maxEnergySurge)
     }
 
     setTimeout(() => this.lifecycle(), rules.lifecycleInMs)

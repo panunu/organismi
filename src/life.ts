@@ -7,16 +7,17 @@ const rules = {
     y: 0,
     energy: 1000,
     fertility: 10,
-    maxEnergySurge: 2000,
+    maxEnergySurge: 20000,
   },
   lifecycleInMs: 100,
   birthEnergyCost: 10,
   energySharingRatio: 2,
   energyCost: 2,
+  energyLevelOfDeath: -10,
 }
 
 const matrix = {}
-const organisms = {}
+const positionIndexInMatrix = (x, y) => `${x},${y}`
 
 class Organism {
   id: number
@@ -51,12 +52,12 @@ class Organism {
   birth() {
     const x = Math.round(Math.random() * 2) - 1 + this.x
     const y = Math.round(Math.random() * 2) - 1 + this.y
-    this.fertility--
 
-    const positionIndex = `${x},${y}`
+    const positionIndex = positionIndexInMatrix(x, y)
     if (!matrix[positionIndex]) {
       const baby = new Organism(this, x, y)
       this.children.push(baby)
+      this.fertility--
 
       matrix[positionIndex] = baby
     }
@@ -65,7 +66,7 @@ class Organism {
   lifecycle() {
     if (Math.floor(Math.random() * 4) === 0) {
       this.energy -= rules.energyCost
-      this.fertility += 1
+      this.fertility += Math.round(this.energy / 10)
     }
 
     if (
@@ -76,7 +77,7 @@ class Organism {
       this.birth()
     }
 
-    if (this.parent?.energy >= rules.birthEnergyCost) {
+    if (this.parent?.energy >= rules.energySharingRatio * 2) {
       const energyToShare = Math.round(
         this.parent.energy /
           this.parent.children.length /
@@ -86,13 +87,14 @@ class Organism {
       this.parent.energy -= energyToShare
     }
 
-    if (this.energy <= 0 && !this.genesis) {
+    if (this.energy <= rules.energyLevelOfDeath && !this.genesis) {
       this.children.forEach((child) => (child.parent = null))
-      matrix[`${this.x}.${this.y}`] = null
-      delete matrix[`${this.x}.${this.y}`]
+      delete matrix[positionIndexInMatrix(this.x, this.y)]
+
+      return
     }
 
-    if (this.genesis && Math.random() >= 0.95) {
+    if (this.genesis && Math.random() >= 0.9) {
       this.energy += Math.round(Math.random() * rules.genesis.maxEnergySurge)
     }
 
@@ -104,8 +106,6 @@ const bigBang = (x, y) => {
   const genesis = new Organism(null, x, y)
 
   console.log('big bang', genesis.id, genesis.x, genesis.y)
-
-  setInterval(() => genesis.lifecycle(), rules.lifecycleInMs)
 }
 
-export { matrix, organisms, rules, bigBang }
+export { matrix, rules, bigBang }

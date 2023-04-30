@@ -10,7 +10,7 @@ const rules = {
     energySharingRatio: 4,
   },
   birthEnergyCost: 10,
-  lifecycleInMs: 30,
+  lifecycleInMs: 60,
   energyCost: 1,
   maxEnergySurge: 2000000,
   energySurgeOdds: 1 / 10,
@@ -18,7 +18,7 @@ const rules = {
   birthOdds: 1 / 10,
   colorRotationFactor: 20,
   evolutionaryStep: 2,
-  cannibalismThresholdOnAncestors: 2,
+  cannibalismThresholdOnAncestors: 1,
 }
 
 const matrix = {}
@@ -117,6 +117,9 @@ class Organism {
 
     if (this.parent) {
       this.parent.energy += this.fertility
+      this.parent.children = this.parent.children?.filter(
+        (children) => children.id !== this.id
+      )
     }
 
     this.children.forEach((child) => (child.parent = null))

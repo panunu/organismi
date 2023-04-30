@@ -7,14 +7,18 @@ const rules = {
     y: 0,
     energy: 1000,
     fertility: 10,
+    energySharingRatio: 4,
   },
   birthEnergyCost: 10,
-  lifecycleInMs: 100,
-  energySharingRatio: 2,
+  lifecycleInMs: 50,
   energyCost: 1,
-  maxEnergySurge: 20000,
+  maxEnergySurge: 2000000,
+  energySurgeOdds: 1 / 10,
   energyLevelOfDeath: -10,
   birthOdds: 1 / 10,
+  colorRotationFactor: 20,
+  evolutionaryStep: 1,
+  cannibalismThresholdOnAncestors: 100,
 }
 
 const matrix = {}
@@ -22,6 +26,7 @@ const positionIndexInMatrix = (x, y) => `${x},${y}`
 
 class Organism {
   id: number
+  ancestry: number
   energy: number
   x: number
   y: number
@@ -29,25 +34,37 @@ class Organism {
   children: Array<Organism>
   fertility: number
   genesis: boolean
+  energySharingRatio: number
   color: any
+  timeout: any
 
   constructor(parent: Organism | null = null, x: number, y: number) {
+    const evolution =
+      -rules.evolutionaryStep / 2 + Math.random() * rules.evolutionaryStep
+
     this.id = Math.random()
     this.genesis = parent === null
     this.parent = parent
     this.children = []
-    this.fertility = parent?.fertility ?? rules.genesis.fertility
-    this.color = Color(parent?.color || randomColor({ luminosity: 'dark' }))
-      .rotate(-5 + Math.random() * 10)
-      .hex()
-
-    this.energy = parent ? parent.energy / 2 : rules.genesis.energy
-    if (parent) parent.energy /= 2
-
+    this.ancestry = (parent?.ancestry ?? 1) + evolution
     this.x = x
     this.y = y
+    this.color = Color(parent?.color || randomColor({ luminosity: 'dark' }))
+      .rotate(evolution * rules.colorRotationFactor)
+      .hex()
 
-    setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
+    this.fertility = parent?.fertility ?? rules.genesis.fertility
+    this.energy = parent ? parent.energy / 2 : rules.genesis.energy
+    this.energySharingRatio =
+      parent?.energySharingRatio + evolution ?? rules.genesis.energySharingRatio
+
+    if (parent) {
+      parent.energy /= 2
+      parent.children.push(this)
+      parent.fertility = 0
+    }
+
+    this.timeout = setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
   }
 
   multiply() {
@@ -55,13 +72,55 @@ class Organism {
     const y = Math.round(Math.random() * 2) - 1 + this.y
 
     const positionIndex = positionIndexInMatrix(x, y)
-    if (!matrix[positionIndex]) {
-      const baby = new Organism(this, x, y)
-      this.children.push(baby)
-      this.fertility = 0
-
-      matrix[positionIndex] = baby
+    const existing = matrix[positionIndex]
+    if (
+      existing &&
+      !existing.genesis &&
+      Math.abs(existing.ancestry - this.ancestry) <
+        rules.cannibalismThresholdOnAncestors
+    ) {
+      return
     }
+
+    const baby = new Organism(this, x, y)
+    existing && baby.eat(existing)
+
+    matrix[positionIndex] = baby
+  }
+
+  eat(organism: Organism) {
+    const share = (to, energy) => {
+      if (to) {
+        const sharedEnergy = Math.floor(energy / 2)
+
+        to.energy += sharedEnergy
+        if (to.parent) {
+          share(to.parent, sharedEnergy)
+        }
+      }
+    }
+
+    organism.die()
+    share(this, organism.energy + organism.fertility)
+  }
+
+  share() {
+    const energyToShare = Math.round(
+      this.energy / this.children.length / this.energySharingRatio
+    )
+    this.energy -= Math.floor(energyToShare * this.children.length)
+    this.children.forEach((children) => (children.energy += energyToShare))
+  }
+
+  die() {
+    this.timeout && clearTimeout(this.timeout)
+
+    if (this.parent) {
+      this.parent.energy += this.fertility
+    }
+
+    this.children.forEach((child) => (child.parent = null))
+    delete matrix[positionIndexInMatrix(this.x, this.y)]
   }
 
   lifecycle() {
@@ -76,27 +135,22 @@ class Organism {
       this.multiply()
     }
 
-    if (this.parent?.energy >= rules.energySharingRatio * 2) {
-      const energyToShare = Math.round(
-        this.parent.energy /
-          this.parent.children.length /
-          rules.energySharingRatio
-      )
-      this.energy += energyToShare
-      this.parent.energy -= energyToShare
+    if (this.children?.length > 0 && this.energy >= this.energySharingRatio) {
+      this.share()
     }
 
     if (this.energy <= rules.energyLevelOfDeath && !this.genesis) {
-      this.children.forEach((child) => (child.parent = null))
-      delete matrix[positionIndexInMatrix(this.x, this.y)]
-      return
+      return this.die()
     }
 
-    if (this.genesis && Math.random() >= 0.9) {
+    if (this.genesis && Math.random() <= rules.energySurgeOdds) {
       this.energy += Math.round(Math.random() * rules.maxEnergySurge)
     }
 
-    setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
+    this.timeout = setTimeout(
+      () => this.lifecycle(),
+      Math.max(rules.lifecycleInMs - this.energy, 10)
+    )
   }
 }
 

@@ -1,8 +1,8 @@
 import './App.css'
-import { matrix, organisms, bigBang, rules } from './life.ts'
+import { matrix, bigBang, rules } from './life.ts'
 import { FC, useEffect, useState } from 'react'
 
-const zoomRatio = 20
+const zoomRatio = 10
 
 const start = (e) => {
   Object.values(matrix)?.length === 0 && bigBang(0, 0)
@@ -37,8 +37,8 @@ const Pixels: FC<any> = ({}) => {
         key={`${organism.x}.${organism.y}`}
         x={organism.x}
         y={organism.y}
-        opacity={organism?.energy}
-        color={organism?.color}
+        opacity={organism.energy}
+        color={organism.color}
       />
     )
   })

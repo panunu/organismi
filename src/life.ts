@@ -24,7 +24,7 @@ const rules = {
   energySurgeOdds: 1 / 10,
   birthEnergyCost: 10,
   lifecycleInMs: 50,
-  energyCost: 0.5,
+  lifecycleEnergyCost: 0.5,
   maxEnergySurge: 2000,
   energyLevelOfDeath: -10,
   colorRotationFactor: 20,
@@ -153,7 +153,7 @@ class Organism {
   }
 
   lifecycle() {
-    this.energy -= rules.energyCost
+    this.energy -= rules.lifecycleEnergyCost
     this.fertility += this.energy > 0 ? 1 : 0
 
     if (

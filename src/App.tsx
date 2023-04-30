@@ -2,12 +2,15 @@ import './App.css'
 import { matrix, bigBang, rules } from './life.ts'
 import { FC, useEffect, useState } from 'react'
 
-const zoomRatio = 20
+const zoomRatio = 15
 
 const start = (e) => {
   Object.values(matrix)?.length === 0 && bigBang(0, 0)
 
-  // Math.round(e.clientX / zoomRatio), Math.round(e.clientY / zoomRatio)
+  // bigBang(
+  //   Math.round(-50 + Math.random() * 100),
+  //   Math.round(-50 + Math.random() * 100)
+  // )
 }
 
 const App: FC = () => {

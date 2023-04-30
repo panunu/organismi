@@ -10,14 +10,14 @@ const rules = {
     energySharingRatio: 4,
   },
   birthEnergyCost: 10,
-  lifecycleInMs: 50,
+  lifecycleInMs: 30,
   energyCost: 1,
   maxEnergySurge: 2000000,
   energySurgeOdds: 1 / 10,
   energyLevelOfDeath: -10,
   birthOdds: 1 / 10,
   colorRotationFactor: 20,
-  evolutionaryStep: 1,
+  evolutionaryStep: 2,
   cannibalismThresholdOnAncestors: 2,
 }
 
@@ -46,7 +46,7 @@ class Organism {
     this.genesis = parent === null
     this.parent = parent
     this.children = []
-    this.ancestry = (parent?.ancestry ?? 1) + evolution
+    this.ancestry = (parent?.ancestry ?? evolution) + evolution
     this.x = x
     this.y = y
     this.color = Color(parent?.color || randomColor({ luminosity: 'dark' }))

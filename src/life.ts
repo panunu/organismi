@@ -15,7 +15,7 @@ const rules = {
   genesis: {
     x: 0,
     y: 0,
-    energy: 1000,
+    energy: 10000,
     fertility: 10,
     energySharingRatio: 4,
   },
@@ -23,7 +23,7 @@ const rules = {
   genesisOdds: 1 / 1000,
   energySurgeOdds: 1 / 10,
   birthEnergyCost: 10,
-  lifecycleInMs: 50,
+  lifecycleInMs: 20,
   lifecycleEnergyCost: 0.5,
   maxEnergySurge: 2000,
   energyLevelOfDeath: -10,
@@ -34,6 +34,7 @@ const rules = {
 }
 
 const matrix = {}
+let organisms = 1
 
 class Organism {
   id: number
@@ -58,7 +59,7 @@ class Organism {
   ) {
     const evolution = shiftNegative(rules.evolutionaryStep)
 
-    this.id = random()
+    this.id = organisms++
     this.genesis = parent === null
     this.parent = parent
     this.children = []

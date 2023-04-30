@@ -3,5 +3,5 @@ body {
   padding: 0;
   position: absolute;
   background: wheat;
+  image-rendering: pixelated; image-rendering: crisp-edges;
 }
-

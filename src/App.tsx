@@ -1,4 +1,3 @@
-import './App.css'
 import { matrix, bigBang, rules } from './life'
 import { FC, useEffect, useRef, useState } from 'react'
 
@@ -22,21 +21,25 @@ const App: FC = () => {
 
   return (
     <div className="App" onClick={start}>
-      <Pixels />
+      <Pixels iteration={iteration} />
     </div>
   )
 }
 
-const Pixels: FC = () => {
+const Pixels: FC<any> = ({ iteration }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
 
   useEffect(() => {
     if (canvasRef.current) {
-      const ctx = canvasRef.current.getContext('2d')
+      const ctx = canvasRef.current.getContext('2d', { alpha: false })
+      ctx.imageSmoothingEnabled = false
 
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+      ctx.beginPath()
+      ctx.fillStyle = `wheat`
+      ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)
+      ctx.closePath()
 
-      Object.values(matrix)?.map((organism: any) => {
+      Object.values(matrix)?.forEach((organism: any) => {
         let color = organism.color.rgb().object()
 
         ctx.beginPath()
@@ -52,7 +55,7 @@ const Pixels: FC = () => {
         ctx.closePath()
       })
     }
-  }, [Object.values(matrix)])
+  }, [iteration])
 
   return (
     <canvas

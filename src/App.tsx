@@ -1,5 +1,5 @@
 import './App.css'
-import { matrix, bigBang, rules } from './life.ts'
+import { matrix, bigBang, rules } from './life'
 import { FC, useEffect, useState } from 'react'
 
 const zoomRatio = 15
@@ -22,29 +22,31 @@ const App: FC = () => {
 
   return (
     <div className="App" onClick={start}>
-      <Pixels key={iteration} />
+      <Pixels />
     </div>
   )
 }
 
-const Pixels: FC<any> = ({}) => {
-  // TODO: Try canvas.
+const Pixels: FC = () => {
+  return (
+    <>
+      {Object.values(matrix)?.map((organism: any) => {
+        if (!organism) {
+          return null
+        }
 
-  return Object.values(matrix)?.map((organism: any) => {
-    if (!organism) {
-      return null
-    }
-
-    return (
-      <Pixel
-        key={`${organism.x}.${organism.y}`}
-        x={organism.x}
-        y={organism.y}
-        opacity={organism.energy}
-        color={organism.color}
-      />
-    )
-  })
+        return (
+          <Pixel
+            key={`${organism.x}.${organism.y}`}
+            x={organism.x}
+            y={organism.y}
+            opacity={organism.energy}
+            color={organism.color}
+          />
+        )
+      })}
+    </>
+  )
 }
 
 const Pixel: FC<any> = ({ x, y, opacity, color }) => {

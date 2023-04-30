@@ -10,7 +10,7 @@ const rules = {
     energySharingRatio: 4,
   },
   birthEnergyCost: 10,
-  lifecycleInMs: 60,
+  lifecycleInMs: 50,
   energyCost: 1,
   maxEnergySurge: 2000000,
   energySurgeOdds: 1 / 10,
@@ -18,7 +18,7 @@ const rules = {
   birthOdds: 1 / 10,
   colorRotationFactor: 20,
   evolutionaryStep: 2,
-  cannibalismThresholdOnAncestors: 1,
+  cannibalismThresholdOnAncestors: 5,
 }
 
 const matrix = {}
@@ -37,8 +37,14 @@ class Organism {
   energySharingRatio: number
   color: any
   timeout: any
+  defaultMove: null | { x: number; y: number }
 
-  constructor(parent: Organism | null = null, x: number, y: number) {
+  constructor(
+    parent: Organism | null = null,
+    x: number,
+    y: number,
+    defaultMove: { x: number; y: number } = null
+  ) {
     const evolution =
       -rules.evolutionaryStep / 2 + Math.random() * rules.evolutionaryStep
 
@@ -64,12 +70,25 @@ class Organism {
       parent.fertility = 0
     }
 
+    this.defaultMove = defaultMove
+
     this.timeout = setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
   }
 
   multiply() {
-    const x = Math.round(Math.random() * 2) - 1 + this.x
-    const y = Math.round(Math.random() * 2) - 1 + this.y
+    this.defaultMove = {
+      x:
+        Math.random() >= 0.5
+          ? this.defaultMove?.x ?? Math.round(Math.random() * 2) - 1
+          : Math.round(Math.random() * 2) - 1,
+      y:
+        Math.random() >= 0.5
+          ? this.defaultMove?.y ?? Math.round(Math.random() * 2) - 1
+          : Math.round(Math.random() * 2) - 1,
+    }
+
+    const x = this.defaultMove.x + this.x
+    const y = this.defaultMove.y + this.y
 
     const positionIndex = positionIndexInMatrix(x, y)
     const existing = matrix[positionIndex]
@@ -79,10 +98,11 @@ class Organism {
       Math.abs(existing.ancestry - this.ancestry) <
         rules.cannibalismThresholdOnAncestors
     ) {
+      this.defaultMove = null
       return
     }
 
-    const baby = new Organism(this, x, y)
+    const baby = new Organism(this, x, y, this.defaultMove)
     existing && baby.eat(existing)
 
     matrix[positionIndex] = baby

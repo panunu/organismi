@@ -46,7 +46,7 @@ class Organism {
   fertility: number
   genesis: boolean
   energySharingRatio: number
-  color: any
+  color: Color
   timeout: any
   memory: object | any
 
@@ -66,9 +66,9 @@ class Organism {
     this.x = x
     this.y = y
     this.memory = memory
-    this.color = Color(parent?.color || randomColor({ luminosity: 'random' }))
-      .rotate(evolution * rules.colorRotationFactor)
-      .hex()
+    this.color = (
+      parent?.color || Color(randomColor({ luminosity: 'random' }))
+    ).rotate(evolution * rules.colorRotationFactor)
 
     this.fertility = parent?.fertility ?? rules.genesis.fertility
     this.energy = parent ? parent.energy / 2 : rules.genesis.energy

@@ -3,11 +3,14 @@ import randomColor from 'randomcolor'
 
 import {
   either,
+  inherit,
   norp,
   odds,
   positionIndexInMatrix,
   shiftNegative,
 } from './utils'
+
+import { slowDownInMs } from './App'
 
 const { round, floor, random, abs, max } = Math
 
@@ -15,22 +18,23 @@ const rules = {
   genesis: {
     x: 0,
     y: 0,
-    energy: 10000,
-    fertility: 10,
-    energySharingRatio: 4,
+    energy: 100000,
+    fertility: 1,
+    energySharingRatio: 100,
+    leapDistance: 1,
+    lifecycleInMs: 40,
+    cannibalismThresholdOnAncestors: 6,
   },
   birthOdds: 1 / 10,
-  genesisOdds: 1 / 1000,
-  energySurgeOdds: 1 / 10,
+  genesisOdds: 1 / 10000,
+  energySurgeOdds: 1 / 100,
   birthEnergyCost: 10,
-  lifecycleInMs: 40,
   lifecycleEnergyCost: 0.5,
   maxEnergySurge: 2000,
   energyLevelOfDeath: -10,
-  colorRotationFactor: 20,
-  evolutionaryStep: 2,
-  leapDistance: 1,
-  cannibalismThresholdOnAncestors: 5,
+  colorRotationFactor: 50,
+  evolutionaryStep: 0.1,
+  genesisImmortality: false,
 }
 
 const matrix = {}
@@ -50,6 +54,9 @@ class Organism {
   color: Color
   timeout: any
   memory: object | any
+  leapDistance: number
+  lifecycleInMs: number
+  cannibalismThresholdOnAncestors: number
 
   constructor(
     parent: Organism | null = null,
@@ -68,13 +75,20 @@ class Organism {
     this.y = y
     this.memory = memory
     this.color = (
-      parent?.color || Color(randomColor({ luminosity: 'random' }))
+      parent?.color ||
+      Color(randomColor({ luminosity: either('dark', 'light') }))
     ).rotate(evolution * rules.colorRotationFactor)
 
-    this.fertility = parent?.fertility ?? rules.genesis.fertility
-    this.energy = parent ? parent.energy / 2 : rules.genesis.energy
-    this.energySharingRatio =
-      parent?.energySharingRatio + evolution ?? rules.genesis.energySharingRatio
+    this.leapDistance = inherit(parent, 'leapDistance')
+    this.fertility = inherit(parent, 'fertility', evolution)
+    this.energy = inherit(parent, 'energy', -parent?.energy / 2 || evolution)
+    this.energySharingRatio = inherit(parent, 'energySharingRatio', evolution)
+    this.cannibalismThresholdOnAncestors = inherit(
+      parent,
+      'cannibalismThresholdOnAncestors',
+      evolution
+    )
+    this.lifecycleInMs = inherit(parent, 'lifecycleInMs', evolution)
 
     if (parent) {
       parent.energy /= 2
@@ -82,11 +96,14 @@ class Organism {
       parent.fertility = 0
     }
 
-    this.timeout = setTimeout(() => this.lifecycle(), rules.lifecycleInMs)
+    this.timeout = setTimeout(
+      () => this.lifecycle(),
+      this.lifecycleInMs + slowDownInMs
+    )
   }
 
   multiply() {
-    const distance = () => norp(rules.leapDistance)
+    const distance = () => norp(this.leapDistance)
 
     this.memory = {
       x: either(this.memory?.x ?? distance(), distance()),
@@ -101,7 +118,7 @@ class Organism {
     if (
       existing &&
       abs(existing.ancestry - this.ancestry) <
-        rules.cannibalismThresholdOnAncestors
+        this.cannibalismThresholdOnAncestors
     ) {
       this.memory.x = undefined
       this.memory.y = undefined
@@ -155,7 +172,7 @@ class Organism {
 
   lifecycle() {
     this.energy -= rules.lifecycleEnergyCost
-    this.fertility += this.energy > 0 ? 1 : 0
+    this.fertility += this.energy > 0 ? rules.lifecycleEnergyCost : 0
 
     if (
       this.fertility > 0 &&
@@ -169,7 +186,10 @@ class Organism {
       this.share()
     }
 
-    if (this.energy <= rules.energyLevelOfDeath && !this.genesis) {
+    if (
+      this.energy <= rules.energyLevelOfDeath &&
+      (!this.genesis || !rules.genesisImmortality)
+    ) {
       return this.die()
     }
 
@@ -179,7 +199,7 @@ class Organism {
 
     this.timeout = setTimeout(
       () => this.lifecycle(),
-      max(rules.lifecycleInMs - this.energy, 10)
+      max(this.lifecycleInMs - this.energy, 10) + slowDownInMs
     )
   }
 }

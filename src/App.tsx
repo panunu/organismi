@@ -2,21 +2,23 @@ import { matrix, bigBang, rules } from './life'
 import { FC, useEffect, useRef, useState } from 'react'
 
 const zoomRatio = 10
+const framesPerSecond = 32
+export const slowDownInMs = 0
 
 const start = (e) => {
-  Object.values(matrix)?.length === 0 && bigBang(0, 0)
-
-  // bigBang(
-  //   Math.round(-50 + Math.random() * 100),
-  //   Math.round(-50 + Math.random() * 100)
-  // )
+  if (Object.values(matrix)?.length === 0) bigBang(0, 0)
+  else
+    bigBang(
+      Math.round(-50 + Math.random() * 100),
+      Math.round(-50 + Math.random() * 100)
+    )
 }
 
 const App: FC = () => {
   const [iteration, setIteration] = useState(0)
 
   useEffect(() => {
-    setTimeout(() => setIteration(iteration + 1), rules.lifecycleInMs)
+    setTimeout(() => setIteration(iteration + 1), 1000 / framesPerSecond)
   }, [iteration])
 
   return (

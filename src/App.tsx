@@ -30,12 +30,18 @@ const App: FC = () => {
 
 const Pixels: FC<any> = ({ iteration }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
+  const [ctx, setCtx] = useState(null)
 
   useEffect(() => {
-    if (canvasRef.current) {
+    if (canvasRef) {
       const ctx = canvasRef.current.getContext('2d', { alpha: false })
       ctx.imageSmoothingEnabled = false
+      setCtx(ctx)
+    }
+  }, [canvasRef])
 
+  useEffect(() => {
+    if (ctx) {
       ctx.beginPath()
       ctx.fillStyle = `wheat`
       ctx.fillRect(0, 0, canvasRef.current.width, canvasRef.current.height)

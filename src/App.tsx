@@ -51,9 +51,10 @@ const Pixels: FC<any> = ({ iteration }) => {
         let color = organism.color.rgb().object()
 
         ctx.beginPath()
-        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${
-          organism.energy / 100 + 0.05
-        })`
+        ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${Math.max(
+          organism.energy / 100,
+          0.05
+        )})`
         ctx?.fillRect(
           organism.x * zoomRatio + window.innerWidth / 2,
           organism.y * zoomRatio + window.innerHeight / 2,

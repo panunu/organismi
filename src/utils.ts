@@ -8,3 +8,18 @@ export const either = (a: any, b: any) => (Math.random() >= 0.5 ? a : b)
 export const odds = (odds: number) => Math.random() <= odds
 export const inherit = (parent: object | null, key, evolution = 0) =>
   (parent ? parent[key] : rules.genesis[key]) + evolution
+
+export const neighbouring = ({ x, y }) => {
+  const neighbours = [
+    [-1, -1],
+    [-1, 0],
+    [-1, 1],
+    [0, -1],
+    [0, 1],
+    [1, -1],
+    [1, 0],
+    [1, 1],
+  ]
+
+  return neighbours.map(([dx, dy]) => ({ x: x + dx, y: y + dy }))
+}

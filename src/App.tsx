@@ -1,4 +1,4 @@
-import { matrix, bigBang, rules } from './life'
+import { matrix, spawn, rules } from './life'
 import { FC, useEffect, useRef, useState } from 'react'
 
 const zoomRatio = 10
@@ -6,9 +6,9 @@ const framesPerSecond = 32
 export const slowDownInMs = 0
 
 const start = (e) => {
-  if (Object.values(matrix)?.length === 0) bigBang(0, 0)
+  if (Object.values(matrix)?.length === 0) spawn(0, 0)
   else
-    bigBang(
+    spawn(
       Math.round(-50 + Math.random() * 100),
       Math.round(-50 + Math.random() * 100)
     )

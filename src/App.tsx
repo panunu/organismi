@@ -1,7 +1,7 @@
-import { matrix, spawn, rules } from './life'
+import { matrix, spawn } from './life'
 import { FC, useEffect, useRef, useState } from 'react'
 
-const zoomRatio = 10
+const zoomRatio = 5
 const framesPerSecond = 32
 export const slowDownInMs = 0
 
@@ -53,7 +53,7 @@ const Pixels: FC<any> = ({ iteration }) => {
         ctx.beginPath()
         ctx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${Math.max(
           organism.energy / 100,
-          0.05
+          0.01
         )})`
         ctx?.fillRect(
           organism.x * zoomRatio + window.innerWidth / 2,

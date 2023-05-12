@@ -23,7 +23,7 @@ const rules = {
     energyRatioOfShare: 3 / 10,
     energyRatioOfSpread: 3 / 10,
     energyLevelOfDeath: 0,
-    energyCostPerLifecycle: 0.01,
+    energyCostPerLifecycle: 0.001,
     energyShareOdds: 10 / 10,
     energySavingRatio: 2,
     memoryOdds: 9 / 10,
@@ -34,6 +34,7 @@ const rules = {
   evolutionaryStep: 0.01,
   colorRotationFactor: 50,
   ancestorImmortality: false,
+  amountOfFood: 0,
 }
 
 const matrix = {}
@@ -43,12 +44,10 @@ class Organism {
   id: number
   ancestry: number
   ancestor: Organism
-  parent: Organism | null
   x: number
   y: number
 
   color: Color
-  colorRotationFactor: number
   timeout: any
 
   memory: object | any
@@ -59,6 +58,7 @@ class Organism {
   cannibalismThresholdOnAncestors: number
 
   energy: number
+  initialEnergy: number
   energyRatioOfShare: number
   energyLevelOfDeath: number
   energyCostPerLifecycle: number
@@ -68,16 +68,20 @@ class Organism {
   spreadOdds: number
   energyShareOdds: number
 
-  constructor(parent: Organism | null = null, x: number, y: number) {
+  constructor(
+    parent: Organism | null = null,
+    x: number,
+    y: number,
+    energy: number = null
+  ) {
     const evolution = shiftNegative(rules.evolutionaryStep)
 
     this.id = ++organisms
     this.ancestor = parent?.ancestor ?? this
-    this.parent = parent
     this.ancestry = (parent?.ancestry ?? evolution * 999999) + evolution
     this.x = x
     this.y = y
-    this.direction = {}
+    this.direction = parent?.direction ?? {}
     this.memory = {}
 
     this.energyRatioOfShare = inherit(parent, 'energyRatioOfShare', evolution)
@@ -90,13 +94,8 @@ class Organism {
       evolution
     )
 
-    this.energy = parent
-      ? parent.energy * parent.energyRatioOfSpread
-      : rules.genesis.energy
-
-    if (parent) {
-      parent.energy -= this.energy
-    }
+    this.energy = energy
+    this.initialEnergy = this.energy
 
     this.lifecycleInMs = inherit(parent, 'lifecycleInMs', evolution)
     this.leapDistance = inherit(parent, 'leapDistance')
@@ -109,6 +108,8 @@ class Organism {
       parent?.color ||
       Color(randomColor({ luminosity: either('dark', 'light') }))
     ).rotate(evolution * rules.colorRotationFactor)
+
+    return this
   }
 
   spread() {
@@ -126,7 +127,7 @@ class Organism {
 
     const positionIndex = positionIndexInMatrix(x, y)
 
-    if (this.ancestor.memory[positionIndex]) {
+    if (usesMemory && this.ancestor.memory[positionIndex]) {
       this.direction.x = undefined
       this.direction.y = undefined
       return
@@ -137,15 +138,18 @@ class Organism {
 
     if (
       existing &&
-      existing.energy > this.energy &&
-      this.ancestor?.id === existing?.ancestor?.id
+      (existing.energy > this.energy ||
+        this.ancestor?.id === existing?.ancestor?.id)
     ) {
       this.direction.x = undefined
       this.direction.y = undefined
       return
     }
 
-    const offspring = new Organism(this, x, y)
+    const energyForOffspring = this.energy * this.energyRatioOfSpread
+    this.energy -= energyForOffspring
+
+    const offspring = new Organism(this, x, y, energyForOffspring)
     existing && offspring.eat(existing)
     matrix[positionIndex] = offspring
 
@@ -161,7 +165,7 @@ class Organism {
     const siblings = neighbouring({ x: this.x, y: this.y })
       .map(({ x, y }) => matrix[positionIndexInMatrix(x, y)] ?? null)
       .filter(
-        (o) => o?.ancestor?.id === this?.ancestor?.id && this.energy > o.energy
+        (o) => o?.ancestor?.id === this?.ancestor?.id && o.energy < this.energy
       )
 
     if (siblings.length === 0) {
@@ -176,12 +180,11 @@ class Organism {
 
   die() {
     this.timeout && clearTimeout(this.timeout)
-
     delete matrix[positionIndexInMatrix(this.x, this.y)]
   }
 
   lifecycle() {
-    if (this.energy <= this.energyLevelOfDeath) {
+    if (this.energy <= this.energyLevelOfDeath && !rules.ancestorImmortality) {
       return this.die()
     }
 
@@ -203,23 +206,32 @@ class Organism {
 
     this.energy -= this.energyCostPerLifecycle
 
-    // TODO: Remove.
-    // if (!this.originalAncestorId && odds(this.energySurgeOdds)) {
-    //   this.energy += round(random() * this.maxEnergySurge)
-    // }
-
     this.timeout = setTimeout(
       () => this.lifecycle(),
-      max(this.lifecycleInMs - this.energy, 10) + slowDownInMs
+      max(this.lifecycleInMs - this.energy / 10, 10) + slowDownInMs
     )
   }
 }
 
-const spawn = (x, y) => {
-  const genesis = new Organism(null, x, y)
-  matrix[positionIndexInMatrix(x, y)] = genesis
+if (rules.amountOfFood > 0) {
+  Array.from({ length: rules.amountOfFood }).forEach(() => {
+    const position = {
+      x: round(shiftNegative(random() * 200)),
+      y: round(shiftNegative(random() * 200)),
+    }
 
-  console.log('genesis', genesis.id, genesis.x, genesis.y)
+    matrix[positionIndexInMatrix(position.x, position.y)] = new Organism(
+      null,
+      position.x,
+      position.y,
+      random() * 10
+    )
+  })
+}
+
+const spawn = (x, y) => {
+  const genesis = new Organism(null, x, y, rules.genesis.energy)
+  matrix[positionIndexInMatrix(x, y)] = genesis
   genesis.lifecycle()
 }
 
